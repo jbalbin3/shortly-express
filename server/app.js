@@ -31,7 +31,6 @@ app.get('/login', // renders the login page
 app.post('/login', // When someone is logging in POST
   (req, res) => { // req.body = username && password
     // call some sort of Promise
-    // console.log(req.body.username, req.body.password);
     // An object where the keys are column names and the values are the current values to be matched.
     models.Users.get({ username: req.body.username})
       .then((userInfo) => { // has id, username, password, salt
@@ -49,7 +48,7 @@ app.post('/login', // When someone is logging in POST
         }
       })
       .catch(() => {
-        res.redirect('/signup');
+        res.redirect('/login');
       });
   });
 
@@ -62,7 +61,7 @@ app.post('/signup', // When someone is signing up. POST
   (req, res) => {
     // call some sort of Promise
     models.Users.create({username: req.body.username, password: req.body.password})// req.body =  username && password
-      .then((newUser) => {
+      .then(() => {
         res.status(200).redirect('/');
       })
       .error(error => {
