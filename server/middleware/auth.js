@@ -13,41 +13,36 @@ const Promise = require('bluebird');
 
 // res.headers.cookies = session.hash
 
-// it('assigns a username and userId property to the session object if the session is assigned to a user', function(done) {
-//   var requestWithoutCookie = httpMocks.createRequest();
-//   var response = httpMocks.createResponse();
-//   var username = 'BillZito';
 
-//   db.query('INSERT INTO users (username) VALUES (?)', username, function(error, results) {
-//     if (error) { return done(error); }
-//     var userId = results.insertId;
+/*
+it('assigns a session object to the request if a session already exists', function(done) {
 
-//     createSession(requestWithoutCookie, response, function() {
-//       var hash = requestWithoutCookie.session.hash;
-//       db.query('UPDATE sessions SET userId = ? WHERE hash = ?', [userId, hash], function(error, result) {
+  var requestWithoutCookie = httpMocks.createRequest();
+  var response = httpMocks.createResponse();
 
-//         var secondResponse = httpMocks.createResponse();
-//         var requestWithCookies = httpMocks.createRequest();
-//         requestWithCookies.cookies.shortlyid = hash;
+  createSession(requestWithoutCookie, response, function() {
+    var cookie = response.cookies.shortlyid.value;
+    var secondResponse = httpMocks.createResponse();
+    var requestWithCookies = httpMocks.createRequest();
+    requestWithCookies.cookies.shortlyid = cookie;
 
-//         createSession(requestWithCookies, secondResponse, function() {
-//           var session = requestWithCookies.session;
-//           expect(session).to.be.an('object');
-//           expect(session.user.username).to.eq(username);
-//           expect(session.userId).to.eq(userId);
-//           done();
-//         });
-//       });
-//     });
-//   });
-// });
+    createSession(requestWithCookies, secondResponse, function() {
+      var session = requestWithCookies.session;
+      expect(session).to.be.an('object');
+      expect(session.hash).to.exist;
+      expect(session.hash).to.be.cookie;
+      done();
+    });
+  });
+});
+*/
 
-//session.userId
 
 // relevant user information = ('hash', 'userid')
 module.exports.createSession = (req, res, next) => {
 
-  if (!req.cookies[0]) {
+  if (!req.cookies.shortlyid) {
+    // console.log('===========> requestObject: ', req.cookies);
     // add a new cookie
     return models.Sessions.create()
       .then((newHashId) => {
@@ -56,19 +51,35 @@ module.exports.createSession = (req, res, next) => {
       .then((newSession) => {
         req.session = newSession;
         res.cookies = {shortlyid: {value: newSession.hash}}; // ?????
-        console.log(newSession);
         next();
       });
 
   } else {
     // check valid cookie
-    console.log('SHOULD NOT BE HERE');
-    next();
-  }
+    // console.log('VALID SESSION: ', req.cookies.shortlyid);
+    // console.log('ISLOGGEDIN: ', req.cookies.shortlyid);
 
-  // console.log('req.session.hash========>', req.session.hash )
-  next();
+    return models.Sessions.get({hash: req.cookies.shortlyid})
+      .then((newSession) => {
+        console.log('newSession without valid cookie: ', newSession);
+        req.session = newSession;
+        next();
+      });
+    // find the cookieHash at req.cookies.shortlyid.value
+    // check to see if the cookie belongs to a user
+    // if it does add the user id and username to the session obj
+    // else
+    // ?????
+    // next(); // needs to be nested
+  }
 };
+
+// models.Users.get({id: newSession.id})
+//   .then((userRow) => {
+//     console.log('userRow obj ======>', userRow);
+//     req.session.user = {username: userRow.username};
+//     next();
+//   })
 
 /************************************************************/
 // Add additional authentication middleware functions below
