@@ -61,9 +61,22 @@ module.exports.createSession = (req, res, next) => {
 
     return models.Sessions.get({hash: req.cookies.shortlyid})
       .then((newSession) => {
-        console.log('newSession without valid cookie: ', newSession);
-        req.session = newSession;
-        next();
+        // if newSession is undefined
+        if (!newSession) {
+          return models.Sessions.create()
+            .then((newHashId) => {
+              return models.Sessions.get({id: newHashId.insertId});
+            })
+            .then((newSession) => {
+              req.session = newSession;
+              res.cookies = {shortlyid: {value: newSession.hash}}; // ?????
+              next();
+            });
+        } else {
+          console.log('newSession without valid cookie: ', newSession);
+          req.session = newSession;
+          next();
+        }
       });
     // find the cookieHash at req.cookies.shortlyid.value
     // check to see if the cookie belongs to a user
