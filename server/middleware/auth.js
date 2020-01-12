@@ -1,6 +1,6 @@
 const models = require('../models');
 const Promise = require('bluebird');
-const parseCookies = require('./cookieParser')
+const parseCookies = require('./cookieParser');
 
 // -write functions that access parsed cookies on requests
 // -looks up user data related to that session
@@ -25,7 +25,6 @@ module.exports.createSession = (req, res, next) => {
       })
       .then((newSession) => {
         req.session = newSession;
-        console.log(newSession.hash)
         res.cookie('shortlyid', newSession.hash);// ?????
         next(req, res);
       });
@@ -74,8 +73,19 @@ module.exports.verifySession = (req, res, next) => {
   parseCookies(req, res, (req, res) => {
     exports.createSession(req, res, (req, res) => {
       // check to see if the cookieHash belongs to a user
-        // if it does, assign
+      // if it does, assign
       next(req, res);
     });
+  });
+};
+
+module.exports.deleteSession = (req, res, next) => {
+  parseCookies(req, res, (req, res) => {
+    // delete cookie in db
+    models.Sessions.delete({hash: req.cookies.shortlyid})
+    .then(() => {
+      res.cookie('shortlyid', '')
+      next(req, res);
+    })
   })
 };

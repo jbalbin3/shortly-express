@@ -554,10 +554,12 @@ describe('', function() {
         var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
         var cookieValue = cookies[0].value;
 
+
         requestWithSession('http://127.0.0.1:4568/logout', function(error, response, resBody) {
           if (error) { return done(error); }
 
           var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+
           var newCookieValue = cookies[0].value;
           expect(cookieValue).to.not.equal(newCookieValue);
 
@@ -572,7 +574,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Privileged Access:', function() {
+  describe('Privileged Access:', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {
@@ -599,7 +601,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Link creation:', function() {
+  describe('Link creation:', function() {
 
     var cookies = request.jar();
     var requestWithSession = request.defaults({ jar: cookies });
