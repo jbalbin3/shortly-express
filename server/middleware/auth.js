@@ -1,5 +1,6 @@
 const models = require('../models');
 const Promise = require('bluebird');
+const parseCookies = require('./cookieParser')
 
 // -write functions that access parsed cookies on requests
 // -looks up user data related to that session
@@ -13,51 +14,23 @@ const Promise = require('bluebird');
 
 // res.headers.cookies = session.hash
 
-
-/*
-it('assigns a session object to the request if a session already exists', function(done) {
-
-  var requestWithoutCookie = httpMocks.createRequest();
-  var response = httpMocks.createResponse();
-
-  createSession(requestWithoutCookie, response, function() {
-    var cookie = response.cookies.shortlyid.value;
-    var secondResponse = httpMocks.createResponse();
-    var requestWithCookies = httpMocks.createRequest();
-    requestWithCookies.cookies.shortlyid = cookie;
-
-    createSession(requestWithCookies, secondResponse, function() {
-      var session = requestWithCookies.session;
-      expect(session).to.be.an('object');
-      expect(session.hash).to.exist;
-      expect(session.hash).to.be.cookie;
-      done();
-    });
-  });
-});
-*/
-
-
 // relevant user information = ('hash', 'userid')
 module.exports.createSession = (req, res, next) => {
 
   if (!req.cookies.shortlyid) {
-    // console.log('===========> requestObject: ', req.cookies);
-    // add a new cookie
+
     return models.Sessions.create()
       .then((newHashId) => {
         return models.Sessions.get({id: newHashId.insertId});
       })
       .then((newSession) => {
         req.session = newSession;
-        res.cookies = {shortlyid: {value: newSession.hash}}; // ?????
-        next();
+        console.log(newSession.hash)
+        res.cookie('shortlyid', newSession.hash);// ?????
+        next(req, res);
       });
 
   } else {
-    // check valid cookie
-    // console.log('VALID SESSION: ', req.cookies.shortlyid);
-    // console.log('ISLOGGEDIN: ', req.cookies.shortlyid);
 
     return models.Sessions.get({hash: req.cookies.shortlyid})
       .then((newSession) => {
@@ -69,21 +42,15 @@ module.exports.createSession = (req, res, next) => {
             })
             .then((newSession) => {
               req.session = newSession;
-              res.cookies = {shortlyid: {value: newSession.hash}}; // ?????
-              next();
+              sessionHash = newSession.hash;
+              res.cookie('shortlyid', sessionHash); // ?????
+              next(req, res);
             });
         } else {
-          console.log('newSession without valid cookie: ', newSession);
           req.session = newSession;
-          next();
+          next(req, res);
         }
       });
-    // find the cookieHash at req.cookies.shortlyid.value
-    // check to see if the cookie belongs to a user
-    // if it does add the user id and username to the session obj
-    // else
-    // ?????
-    // next(); // needs to be nested
   }
 };
 
@@ -98,4 +65,17 @@ module.exports.createSession = (req, res, next) => {
 // Add additional authentication middleware functions below
 /************************************************************/
 
-// checking username
+// Add a verifySession helper function to all server routes that require login,
+// redirect the user to a login page as needed.
+// Require users to log in to see shortened links and create new ones.
+// Do NOT require the user to login when using a previously shortened link.
+
+module.exports.verifySession = (req, res, next) => {
+  parseCookies(req, res, (req, res) => {
+    exports.createSession(req, res, (req, res) => {
+      // check to see if the cookieHash belongs to a user
+        // if it does, assign
+      next(req, res);
+    });
+  })
+};

@@ -13,7 +13,7 @@ const parseCookies = (req, res, next) => {
   } else {
     req.cookies = {};
   }
-  next();
+  next(req, res);
 };
 
 module.exports = parseCookies;

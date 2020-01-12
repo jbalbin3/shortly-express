@@ -16,11 +16,22 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
+var logoutButton = document.getElementById('logout')
+
+logoutButton.addEventListener('click', event => {
+  console.log(event)
+  // deleteCookie()
+})
 
 
 app.get('/', // main entry point
+  // check here if session active, if active redirect to index, else redirect to login
+  // verifySession called here?
   (req, res) => {
-    res.render('index');
+    Auth.verifySession(req, res, (req, res) => {
+      // res.setHeader('Content-Type', 'text/html');
+      res.status(200).render('index');
+    });
   });
 
 app.get('/login', // renders the login page
@@ -60,9 +71,15 @@ app.get('/signup', // renders the signup page
 app.post('/signup', // When someone is signing up. POST
   (req, res) => {
     // call some sort of Promise
-    models.Users.create({username: req.body.username, password: req.body.password})// req.body =  username && password
-      .then(() => {
-        res.status(200).redirect('/');
+    models.Users.create({username: req.body.username, password: req.body.password}) // req.body =  username && password
+      .then((userRecord) => {
+        Auth.verifySession(req, res, (req, res) => {
+          models.Sessions.update({hash: req.session.hash},{userId: userRecord.insertId})
+            .then(() => {
+              res.setHeader('Content-Type', 'text/html');
+              res.status(200).redirect('/');
+            });
+        });
       })
       .error(error => {
         res.redirect('/signup');
